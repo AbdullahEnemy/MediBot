@@ -83,10 +83,7 @@ async def qna_conversation( query: ConversationQuery = Body(...)):
         patientId = query.patientId
         language_code = query.language_code
 
-        get_medical_history_url = f"https://medistreamline-be.xeventechnologies.com/api/patientAssessment/get?patientId={patientId}"
-        # get_medical_history_url = f"https://api.medistreamline.ai/api/patientAssessment/get?patientId={patientId}"
-        medical_history_url_response = requests.get(url=get_medical_history_url)
-        medical_history = json.loads(medical_history_url_response.text)
+        history_list = ""
         logger.info(f"Successfully got medical history for patient id: {patientId}")
 
         history_list.append("Hello, I am Dr. , a General Physician. How can I assist you today? Could you please tell me your name, age, gender, and occupation?")
@@ -102,7 +99,7 @@ async def qna_conversation( query: ConversationQuery = Body(...)):
         conv_stage = int(list(stage_and_history_dict.keys())[0])
         logger.info(f"Succesfully got conversation stage: {conv_stage}")
         conversation_chain = MedicalConversationChain.from_openai_llm(llm_name=OPENAI_MODEL_NAME)
-        physician_agent_chain = await conversation_chain.ainvoke({'physician_name': physician_name, 'conversation_stage': conv_stages_summary_dict[conv_stage], 'conversation_history': stage_and_history_dict[str(conv_stage)], 'user_query': user_query, 'medical_history': medical_history})
+        physician_agent_chain = await conversation_chain.ainvoke({'physician_name': physician_name, 'conversation_stage': conv_stages_summary_dict[conv_stage], 'conversation_history': stage_and_history_dict[str(conv_stage)], 'user_query': user_query, 'medical_history': history_list})
         physician_agent_chain = physician_agent_chain.content
         logger.info("Successfully completed the conversation")
         # Return success response with conversation data

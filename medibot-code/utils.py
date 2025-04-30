@@ -188,18 +188,14 @@ class MedicalConversationChain(Runnable):
     current conversation_stage: {conversation_stage}
     user_query : {user_query}
     medical_history : {medical_history}
-    response_language: {query_language}
 
     Generate an appropriate and concise response based on the conversation_history, medical history, current conversation_stage and user_query while adhereing to the guidelines mentioned above. 
     You must give response in the response_language. You must not translate response into English.
     If query is related to patient's general information or medical history, you must respond wisely while keeping conversation_history and current conversation_stage in view.
 
     Example of Valid Responses:
-    Example1 : Bonjour Mahar, je suis désolé d'entendre que vous avez mal au dos. Depuis combien de temps avez-vous cette douleur? Est-ce qu'elle est constante ou intermittente? Est-ce qu'il y a des mouvements ou des positions qui la soulagent ou l'aggravent? Merci de me donner plus de détails.
-    Example2 : I'm sorry to hear that you're experiencing back pain, Mahar. Can you please tell me more about this pain? For instance, how long have you been experiencing it, and does it occur in a specific area or radiate to other parts of your body?
-    Example3 : Hallo Mahar, ich entschuldige mich für die Verzögerung. Sie haben angegeben, dass Sie seit etwa 3-4 Wochen Schmerzen im Handgelenk haben. Können Sie mir bitte beschreiben, wie diese Schmerzen genau sind? Sind sie konstant oder kommen sie in Schüben? Und wo genau spüren Sie die Schmerzen im Handgelenk?
-    Example4 : مرحبًا علي، أنا الدكتور. عذرًا، لم أسمع عن أي ألام أو اعراض حاليًا. هل يمكنك تقديم مزيد من المعلومات حول أي شيء قد تعاني منه الآن؟ هل تشعر بأي ألام أو عوامل محدشة؟
-    Example5 : I;d be happy to take a look at your image.
+    Example1 : I'm sorry to hear that you're experiencing back pain, Mahar. Can you please tell me more about this pain? For instance, how long have you been experiencing it, and does it occur in a specific area or radiate to other parts of your body?
+
 
     Example of Invalid Responses:
     Example1 : I'm unable to directly view images.
