@@ -3,7 +3,6 @@ import os
 import logging
 from langchain_core.runnables import Runnable
 from langchain_core.prompts import ChatPromptTemplate, PromptTemplate
-from langchain_mistralai.chat_models import ChatMistralAI
 from langchain_openai import OpenAI, ChatOpenAI
 import httpx
 # from openai import OpenAI
@@ -97,7 +96,7 @@ class ConversationStageAnalyzer(Runnable):
             assert openai_api_key is not None, "Please set the OPENAI_API_KEY environment variable"
             
             openai_models_list = Openai_Models_List(openai_api_key)
-            assert llm_name in openai_models_list, f"Model {llm_name} not found in Mistral Models List"
+            assert llm_name in openai_models_list, f"Model {llm_name} not found in OpenAI Models List"
         
         except AssertionError as ex:
             return Exception(f"Given model {llm_name} not found in OpenAI Models List")
@@ -139,7 +138,7 @@ class ConversationStageAnalyzer(Runnable):
         Response : 
         """
             stage_analyzer_prompt = ChatPromptTemplate.from_template(template=stage_analyzer_prompt_str)
-            chat_llm = ChatOpenAI(model=llm_name, mistral_api_key = open)
+            chat_llm = ChatOpenAI(model='gpt-4o-mini', openai_api_key=os.environ.get('OPENAI_API_KEY'))
             stage_analyzer_chain = ( stage_analyzer_prompt 
                          | chat_llm )
             return stage_analyzer_chain  
@@ -157,7 +156,7 @@ class MedicalConversationChain(Runnable):
             assert openai_api_key is not None, "Please set the OPENAI_API_KEY environment variable"
             
             openai_models_list = Openai_Models_List(openai_api_key)
-            assert llm_name in openai_models_list, f"Model {llm_name} not found in Mistral Models List"
+            assert llm_name in openai_models_list, f"Model {llm_name} not found in OpenAI Models List"
         
         except AssertionError as ex:
             return Exception(f"Given model {llm_name} not found in OpenAI Models List")
