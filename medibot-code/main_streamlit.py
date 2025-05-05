@@ -1,132 +1,134 @@
 import streamlit as st
 import requests
-import json
 
 # Set up page configuration
-st.set_page_config(page_title='MediBOT - Medical Chat', page_icon='💬', layout='wide')
+st.set_page_config(
+    page_title='MediBOT - Medical Assistant',
+    page_icon='🏥',
+    layout='wide',
+    initial_sidebar_state='expanded'
+)
 
-# Custom Styles
+# Custom CSS for better UI
 st.markdown("""
     <style>
-        .title-container {
-            text-align: center;
-            margin-bottom: 20px;
+        .main {
+            padding: 2rem;
         }
-        .chat-history-container {
-            text-align: left;
-            margin-left: 245px;
-            margin-bottom: 10px;
+        .chat-message {
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            display: flex;
+            flex-direction: column;
         }
-        .chat-container {
-            padding: 15px;
-            border-radius: 10px;
-            max-height: 500px;
-            overflow-y: auto;
-            box-shadow: 2px 2px 10px rgba(0,0,0,0.1);
+        .chat-message.user {
+            background-color: #2b313e;
+            color: white;
+            margin-left: 20%;
         }
-        .message-box {
-            padding: 10px;
-            border-radius: 10px;
-            margin: 7px 250px;
-            max-width: 38%;
-            font-size: 18px;
-            font-weight: normal;
-            word-wrap: break-word;
+        .chat-message.assistant {
+            background-color: #475063;
+            color: white;
+            margin-right: 20%;
         }
-        .user-message {
-            background-color: #b2b5e0;
-            color: black;
-            text-align: left;
-            margin-left: auto;
+        .chat-message .content {
+            display: flex;
+            margin-top: 0.5rem;
         }
-        .assistant-message {
-            background-color: #ddd0c8;
-            color: black;
-            text-align: left;
-            margin-right: auto;
+        .chat-message .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 1rem;
         }
-        .chat-input-container {
-            width: 75%;
-            max-width: 600px;
-            padding-top: 10px;
-            text-align: center;
+        .stTextInput > div > div > input {
+            padding: 1rem;
+            border-radius: 0.5rem;
         }
-        [data-testid="stChatInput"] {
-            max-width: 1290px !important;
-            width: 100% !important;
-            margin: 0 auto;
-            display: block;
-            text-align: left;
+        .sidebar .sidebar-content {
+            background-color: #1e1e1e;
         }
     </style>
 """, unsafe_allow_html=True)
 
 # Initialize session state variables
-if "chat_id" not in st.session_state:
-    st.session_state.chat_id = None
-if "chat_history" not in st.session_state:
-    st.session_state.chat_history = []
-if "messages" not in st.session_state:
-    st.session_state.messages = []
+def initialize_session_state():
+    if "messages" not in st.session_state:
+        st.session_state.messages = []
+    if "medical_history" not in st.session_state:
+        st.session_state.medical_history = []
 
-# App Title
-st.markdown("<div class='title-container'><h1>💬 MediBOT - Medical Chat</h1></div>", unsafe_allow_html=True)
+initialize_session_state()
 
-# Chat History Display
-st.markdown("<div class='chat-history-container'><h3>💬 Chat History</h3></div>", unsafe_allow_html=True)
-with st.container():
-    for message in st.session_state.messages:
-        role_class = "user-message" if message["role"] == "user" else "assistant-message"
-        st.markdown(
-            f"<div class='message-box {role_class}'>{message['content']}</div>",
-            unsafe_allow_html=True
-        )
-
-# Chat Input Field
-st.markdown("<div class='chat-input-container'>", unsafe_allow_html=True)
-query = st.chat_input("✍️ Ask a medical question...")
-st.markdown("</div>", unsafe_allow_html=True)
-
-# Start New Conversation
-if st.button("🚀 Start New Conversation"):
-    st.session_state.messages = []
-    st.session_state.chat_history = []
-    st.session_state.chat_id = None
-
-# If there's a user input
-if query:
-    # Add user message to session state
-    st.session_state.messages.append({'role': 'user', 'content': query})
+# Sidebar for conversation controls
+with st.sidebar:
+    st.title("Conversation Controls")
+    st.markdown("---")
     
-    # API URL (Make sure FastAPI is running and accessible)
+    # Display conversation history
+    st.subheader("Conversation History")
+    for msg in st.session_state.medical_history:
+        st.text(f"{msg}")
+    
+    st.markdown("---")
+    
+    # New conversation button
+    if st.button("🔄 Start New Conversation", use_container_width=True):
+        st.session_state.messages = []
+        st.session_state.medical_history = []
+        st.rerun()
+
+# Main chat interface
+st.title("🏥 MediBOT - Medical Assistant")
+
+# Display chat messages
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.write(message["content"])
+
+# Chat input
+if prompt := st.chat_input("Type your message here..."):
+    # Add user message to chat
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    with st.chat_message("user"):
+        st.write(prompt)
+    
+    # Update medical history
+    st.session_state.medical_history.append(prompt)
+    
+    # API request
     url = "http://127.0.0.1:9595/qnaConversation"
-    
     headers = {"Content-Type": "application/json"}
+    
     body = {
-        "chat_id": st.session_state.chat_id,
-        "user_query": query,
-        "Id": 1,  # Default Id for simplicity
-        "patientId": "12345",  # Sample Patient ID
-        "name": "John Doe",
-        "age": 30,
-        "gender": "Male",
-        "occupation": "Engineer",
-        "firstMessage": True,
-        "language_code": "en"
+        "user_query": prompt,
+        "medical_history": st.session_state.medical_history
     }
     
     try:
-        # Send the request to FastAPI
-        res = requests.post(url, headers=headers, json=body)
-        if res.status_code == 200:
-            data = res.json()
-            st.session_state.chat_id = data["chat_id"]
-            assistant_response = data["message"]
-            st.session_state.messages.append({'role': 'assistant', 'content': assistant_response})
-        else:
-            st.session_state.messages.append({'role': 'assistant', 'content': "❌ Error: Unable to process request."})
-    except Exception as ex:
-        st.session_state.messages.append({'role': 'assistant', 'content': f"❌ Error: {ex}"})
+        with st.spinner("Thinking..."):
+            response = requests.post(url, headers=headers, json=body)
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data["succeeded"]:
+                    assistant_response = data["data"]
+                    
+                    # Add assistant response to chat
+                    st.session_state.messages.append({"role": "assistant", "content": assistant_response})
+                    with st.chat_message("assistant"):
+                        st.write(assistant_response)
+                    
+                    # Update medical history with assistant's response
+                    st.session_state.medical_history.append(assistant_response)
+                else:
+                    st.error(f"Error: {data['message']}")
+            else:
+                st.error(f"Failed to get response from the server. Status code: {response.status_code}")
+                st.error(f"Response: {response.text}")
+    except Exception as e:
+        st.error(f"An error occurred: {str(e)}")
     
-    # Refresh the chat with the new message
-    st.experimental_rerun()
+    # Force a rerun to update the UI
+    st.rerun()

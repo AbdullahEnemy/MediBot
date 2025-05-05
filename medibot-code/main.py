@@ -58,48 +58,24 @@ async def index() -> JSONResponse:
         return JSONResponse(content={"succeeded": False, "message": "Failed to start the conversation", "httpStatusCode": status.HTTP_500_INTERNAL_SERVER_ERROR}, status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-
-
-
-
 @app.post("/qnaConversation", response_class=JSONResponse)
-async def qna_conversation( query: ConversationQuery = Body(...)):
+async def qna_conversation(query: ConversationQuery = Body(...)):
     try:
         history_list = []
         # Log info for entering qna_conversation endpoint
         logger.info("Entering qna_conversation endpoint")   
         # Extract data from query
-        chat_id = query.chat_id
         user_query = query.user_query
-        Id = query.Id
-      # Log user ID 
-        logger.info(f"Chat ID: {chat_id}")
-        physician_name = "William" if Id == 0 else "Elizabeth"
-        patientName = query.name
-        patientAge = query.age
-        patientGender = query.gender
-        patientOccupation = query.occupation
-        firstMessage = query.firstMessage
-        patientId = query.patientId
-        language_code = query.language_code
-
-        history_list = ""
-        logger.info(f"Successfully got medical history for patient id: {patientId}")
-
-        history_list.append("Hello, I am Dr. , a General Physician. How can I assist you today? Could you please tell me your name, age, gender, and occupation?")
-        history_list.append(f"My name is {patientName} and my age is {patientAge}, and my gender is {patientGender} and my occupation is {patientOccupation}")
+        history_list = query.medical_history
         
 
-        # query_lang = detect_language(user_query)
         stage_analyzer_chain = ConversationStageAnalyzer.from_openai_llm(llm_name=OPENAI_MODEL_NAME)
-        start_time = time.time()
-        stage_and_history_dict = await create_conv_stage_and_history_pair(history_list, stage_analyzer_chain=stage_analyzer_chain, chat_id=chat_id)
-        end_time = time.time()
-        elapsed_time = end_time - start_time
+        stage_and_history_dict = await create_conv_stage_and_history_pair(history_list, stage_analyzer_chain)
         conv_stage = int(list(stage_and_history_dict.keys())[0])
         logger.info(f"Succesfully got conversation stage: {conv_stage}")
+
         conversation_chain = MedicalConversationChain.from_openai_llm(llm_name=OPENAI_MODEL_NAME)
-        physician_agent_chain = await conversation_chain.ainvoke({'physician_name': physician_name, 'conversation_stage': conv_stages_summary_dict[conv_stage], 'conversation_history': stage_and_history_dict[str(conv_stage)], 'user_query': user_query, 'medical_history': history_list})
+        physician_agent_chain = await conversation_chain.ainvoke({'conversation_stage': conv_stages_summary_dict[conv_stage], 'conversation_history': history_list, 'user_query': user_query})
         physician_agent_chain = physician_agent_chain.content
         logger.info("Successfully completed the conversation")
         # Return success response with conversation data
@@ -112,8 +88,6 @@ async def qna_conversation( query: ConversationQuery = Body(...)):
     finally:
         # Log info for exiting qna_conversation endpoint
         logger.info("Exiting qna_conversation endpoint")
-
-    
 
 
 if __name__ == "__main__":

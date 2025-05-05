@@ -7,7 +7,7 @@ from langchain_openai import OpenAI, ChatOpenAI
 import httpx
 # from openai import OpenAI
 import requests
-from typing import Optional, Dict
+from typing import List
 from pydantic import BaseModel, Field, field_validator
 from langchain_core.output_parsers import JsonOutputParser
 import io
@@ -28,30 +28,11 @@ logger.addHandler(file_handler)
 load_dotenv()
 
 
-class Texttospeech(BaseModel):
-    text: str
-    id: int
-
-class Report(BaseModel):
-    chat_id: int
-    patientId: str
-
 
 class ConversationQuery(BaseModel):
-    chat_id: Optional[int] = None
-    Id: int
-    patientId: str
     user_query: str
-    name: Optional[str] = None
-    age : Optional[int] = None
-    gender: Optional[str] = None
-    occupation: Optional[str] = None
-    firstMessage: bool
-    language_code: str
+    medical_history: List[str]
 
-class AddTitle(BaseModel):
-    chatId: int
-    name: str
 
 
 conv_stages_summary_dict = {
@@ -78,7 +59,7 @@ def Openai_Models_List(openai_api_key):
     except Exception as ex:
         return Exception(f"Error in fetching OpenAI models: {ex}")
     
-async def create_conv_stage_and_history_pair(history, stage_analyzer_chain,  chat_id = None):
+async def create_conv_stage_and_history_pair(history, stage_analyzer_chain):
     conv_stage_map = {} 
     chain_output = await stage_analyzer_chain.ainvoke({'conversation_history': history, 
                                                     'conv_stages_summary':conv_stages_summary_str})
@@ -166,7 +147,7 @@ class MedicalConversationChain(Runnable):
         try:
             physician_agent_prompt_str = (
     """
-    You are "Dr. {physician_name}," an AI medical assistant designed to support a General Physician.
+    You are "Dr. Ali," an AI medical assistant designed to support a General Physician.
     You are an expert in discussing, diagnosing and addressing a wide range of health concerns, tailored to individuals of all ages and genders.
     You are also enable to accept images with an external help, so you must respond accordingly if query is related to image.
     Your primary function is to serve as the initial point of contact for individuals seeking medical advice and diagnosis.
@@ -187,10 +168,9 @@ class MedicalConversationChain(Runnable):
     conversation_history: {conversation_history}
     current conversation_stage: {conversation_stage}
     user_query : {user_query}
-    medical_history : {medical_history}
 
     Generate an appropriate and concise response based on the conversation_history, medical history, current conversation_stage and user_query while adhereing to the guidelines mentioned above. 
-    You must give response in the response_language. You must not translate response into English.
+    You must give response in the English.
     If query is related to patient's general information or medical history, you must respond wisely while keeping conversation_history and current conversation_stage in view.
 
     Example of Valid Responses:
